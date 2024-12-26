@@ -11,6 +11,7 @@ import { UserRole } from 'src/common/enum/user-role.enum';
 import { PagenatedCommentsDto } from './dto/pagenated-comment.dto';
 import { ToggleResult } from 'src/common/enum/toggle-result.enum';
 import { CommentLike } from './entities/comment-like.entity';
+import { CommentDetailDto } from './dto/comment-detail.dto';
 
 @Injectable()
 export class CommentService {
@@ -42,7 +43,6 @@ export class CommentService {
     return await this.commentRepository.manager.transaction(async manager => {
       const groupId = ((await manager.maximum(Comment, 'groupId', { article: { id: articleId } })) ?? 0) + 1;
 
-      article.commentCount += 1;
       await manager.save(article);
 
       Object.assign(comment, {
@@ -79,7 +79,6 @@ export class CommentService {
 
       await manager.update(Comment, { id: parent.id }, { childCount: () => 'childCount + 1' });
 
-      article.commentCount += 1;
       await manager.save(article);
 
       Object.assign(comment, {
@@ -97,16 +96,29 @@ export class CommentService {
   }
 
   async pagenatedComments(articleId: number, page: number, take: number) {
-    const comments: Comment[] = await this.commentRepository
+    const comments: object[] = await this.commentRepository
       .createQueryBuilder('c')
+      .leftJoin('c.likes', 'cl')
+      .leftJoin('c.user', 'u')
+      .select([
+        'c.id as id',
+        'c.content as content',
+        'c.depth as depth',
+        'c.createdAt as createdAt',
+        'c.updatedAt as updatedAt',
+        'u.nickname as nickname',
+        'u.profileImage as profileImage',
+        'COUNT(DISTINCT cl.id) as likeCount',
+      ])
       .where('c.articleId = :articleId', { articleId })
-      .groupBy()
+      .groupBy('c.id')
       .orderBy('c.groupId', 'ASC')
       .addOrderBy('c.sequence', 'ASC')
       .skip((page - 1) * take)
       .take(take)
-      .getMany();
-    return this.makePagenatedResponseDto(comments);
+      .getRawMany();
+
+    return comments.map(comment => new CommentDetailDto(comment));
   }
 
   makePagenatedResponseDto(comments: Comment[]) {
@@ -161,14 +173,15 @@ export class CommentService {
     if (comment.isDeleted) throw new BadRequestException('이미 삭제된 댓글입니다');
 
     await this.commentRepository.manager.transaction(async manager => {
-      comment.isDeleted = true;
-      comment.content = '삭제된 댓글입니다';
-
-      const article: Article = comment.article;
-      article.commentCount -= 1;
-
-      await manager.save(comment);
-      await manager.save(article);
+      const counts: number = await manager.countBy(Comment, { parentId: comment.id });
+      if (counts === 0) {
+        await manager.remove(comment);
+      } else {
+        comment.isDeleted = true;
+        comment.content = '삭제된 댓글입니다';
+        comment.user = null;
+        await manager.save(comment);
+      }
     });
   }
 
@@ -181,17 +194,10 @@ export class CommentService {
 
     const existingLike = await this.commentLikeRepository.findOne({
       where: {
-        user: {
-          id: user.id,
-        },
-        comment: {
-          id: commentId,
-        },
+        user: { id: user.id },
+        comment: { id: commentId },
       },
-      relations: ['user', 'comment'],
     });
-
-    comment.likeCount += existingLike ? -1 : 1;
 
     if (existingLike) {
       await this.commentRepository.manager.transaction(async manager => {
@@ -206,7 +212,6 @@ export class CommentService {
 
       await this.commentRepository.manager.transaction(async manager => {
         await manager.save(CommentLike, commentLike);
-        await manager.save(Comment, comment);
       });
       return ToggleResult.TOGGLE_APPEND;
     }

@@ -1,3 +1,4 @@
+import { UserSimpleInfoDto } from 'src/user/dto/user-simple-info.dto';
 import { Comment } from '../entities/comment.entity';
 
 export class PagenatedCommentsDto {
@@ -8,14 +9,15 @@ export class PagenatedCommentsDto {
   likes: number;
   depth: number;
   deleted: boolean;
+  user: UserSimpleInfoDto;
 
   constructor(comment: Comment) {
     this.id = comment.id;
     this.createdAt = comment.createdAt;
     this.updatedAt = comment.updatedAt;
     this.content = comment.content;
-    this.likes = comment.likeCount;
     this.depth = comment.depth;
     this.deleted = comment.isDeleted;
+    this.user = new UserSimpleInfoDto(comment.user?.nickname ?? null, comment.user?.profileImage ?? null);
   }
 }
