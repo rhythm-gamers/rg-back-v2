@@ -1,0 +1,8 @@
+export enum RedisPrefix {
+  DUP_NAME = 'DUP_NAME',
+  DUP_NICK = 'DUP_NICK',
+  PRESIGNED_IMAGE_URL = 'P_IMAGE',
+  ACCESS_TOKEN = 'ACCESS',
+  REFRESH_TOKEN = 'REFRESH',
+  RENEW_TOKEN = 'RENEW',
+}
