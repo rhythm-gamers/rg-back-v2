@@ -26,9 +26,6 @@ export class Comment extends CommunityBaseEntity {
   @Column({ default: 0 })
   childCount: number;
 
-  @Column({ default: 0 })
-  likeCount: number;
-
   @Column({ default: false })
   isDeleted: boolean;
 
