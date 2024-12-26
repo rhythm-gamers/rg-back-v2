@@ -12,6 +12,7 @@ import { S3BucketService } from 'src/common/utils/s3-bucket.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { getDecoratorFields } from 'src/common/utils/get-decorator-field';
 import { RedisPrefix } from 'src/common/enum/redis-prefix.enum';
+import { RedisTTL } from 'src/common/enum/redis-ttl.enum';
 
 @Injectable()
 export class UserService {
@@ -24,8 +25,8 @@ export class UserService {
 
   async save(user: User) {
     await this.userRepository.save(user);
-    await this.redisRepository.set(`${RedisPrefix.DUP_NAME}:${user.username}`, CommonType.TRUE, CommonType.TTL_DAY);
-    await this.redisRepository.set(`${RedisPrefix.DUP_NICK}:${user.nickname}`, CommonType.TRUE, CommonType.TTL_DAY);
+    await this.redisRepository.set(`${RedisPrefix.DUP_NAME}:${user.username}`, CommonType.TRUE, RedisTTL.TTL_DAY);
+    await this.redisRepository.set(`${RedisPrefix.DUP_NICK}:${user.nickname}`, CommonType.TRUE, RedisTTL.TTL_DAY);
   }
 
   async withdraw(uuid: string) {
@@ -68,8 +69,8 @@ export class UserService {
         await manager.save(User, user);
         await manager.save(BackupUser, backup);
 
-        redisTransaction.set(`${RedisPrefix.DUP_NAME}:${username}`, CommonType.FALSE, 'EX', CommonType.TTL_DAY);
-        redisTransaction.set(`${RedisPrefix.DUP_NICK}:${nickname}`, CommonType.FALSE, 'EX', CommonType.TTL_DAY);
+        redisTransaction.set(`${RedisPrefix.DUP_NAME}:${username}`, CommonType.FALSE, 'EX', RedisTTL.TTL_DAY);
+        redisTransaction.set(`${RedisPrefix.DUP_NICK}:${nickname}`, CommonType.FALSE, 'EX', RedisTTL.TTL_DAY);
 
         const redisResult = await new Promise((resolve, reject) => {
           redisTransaction.exec((err, replies) => {
@@ -136,7 +137,7 @@ export class UserService {
     } else {
       const user: User = await this.userRepository.findOneBy({ username: username });
       if (user) throw new ConflictException('중복된 회원명입니다');
-      await this.redisRepository.set(`${RedisPrefix.DUP_NAME}:${username}`, CommonType.FALSE, CommonType.TTL_DAY);
+      await this.redisRepository.set(`${RedisPrefix.DUP_NAME}:${username}`, CommonType.FALSE, RedisTTL.TTL_DAY);
     }
   }
 
@@ -148,7 +149,7 @@ export class UserService {
     } else {
       const user: User = await this.userRepository.findOneBy({ nickname: nickname });
       if (user) throw new ConflictException('중복된 닉네임입니다');
-      await this.redisRepository.set(`${RedisPrefix.DUP_NICK}:${nickname}`, CommonType.FALSE, CommonType.TTL_DAY);
+      await this.redisRepository.set(`${RedisPrefix.DUP_NICK}:${nickname}`, CommonType.FALSE, RedisTTL.TTL_DAY);
     }
   }
 
@@ -171,7 +172,7 @@ export class UserService {
 
   private async toggleNicknameUsage(prevNick: string, nickname: string): Promise<void> {
     if (!nickname) return;
-    await this.redisRepository.set(`${RedisPrefix.DUP_NICK}:${prevNick}`, CommonType.FALSE, CommonType.TTL_DAY);
-    await this.redisRepository.set(`${RedisPrefix.DUP_NICK}:${nickname}`, CommonType.TRUE, CommonType.TTL_DAY);
+    await this.redisRepository.set(`${RedisPrefix.DUP_NICK}:${prevNick}`, CommonType.FALSE, RedisTTL.TTL_DAY);
+    await this.redisRepository.set(`${RedisPrefix.DUP_NICK}:${nickname}`, CommonType.TRUE, RedisTTL.TTL_DAY);
   }
 }

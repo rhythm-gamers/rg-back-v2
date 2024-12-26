@@ -12,6 +12,7 @@ import { RefreshTokenPayload } from './dto/refresh-token.payload';
 import { RedisRepository } from 'src/common/utils/redis.repository';
 import { TokenType } from 'src/common/enum/token-type.enum';
 import { RedisPrefix } from 'src/common/enum/redis-prefix.enum';
+import { RedisTTL } from 'src/common/enum/redis-ttl.enum';
 
 const cookieOptions = {
   sameSite: 'none' as const,
@@ -49,7 +50,7 @@ export class AuthService {
     const accessToken = await this.tokenService.sign(accessPayload, CommonType.TTL_HOUR);
     const refreshToken = await this.tokenService.sign(refreshPayload, CommonType.TTL_DAY * 7);
 
-    await this.redisRepository.set(`${RedisPrefix.REFRESH_TOKEN}:${user.id}`, refreshToken, CommonType.TTL_DAY * 7);
+    await this.redisRepository.set(`${RedisPrefix.REFRESH_TOKEN}:${user.id}`, refreshToken, RedisTTL.TTL_DAY * 7);
 
     return [accessToken, refreshToken];
   }
@@ -74,7 +75,7 @@ export class AuthService {
     await this.userService.renewal(uuid, encrypted);
   }
 
-  addCookie(res: Response, key: string, val: string, ttlSec?: number) {
+  addCookie(res: Response, key: string, val: string, ttlSec: number) {
     res.cookie(key, `${TokenType.TYPE} ${val}`, { ...cookieOptions, maxAge: ttlSec * 1000 });
   }
 
