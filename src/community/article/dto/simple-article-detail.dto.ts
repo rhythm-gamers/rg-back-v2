@@ -1,20 +1,25 @@
-import { UserSimpleInfoDto } from 'src/user/dto/user-simple-info.dto';
-import { Article } from '../entities/article.entity';
+import { ArticleDetailDto } from './article-detail.dto';
 
-export class SimpleArticleDetailDto {
+export class SimpleArticleDetailDto extends ArticleDetailDto {
   id: number;
   title: string;
   content: string;
+  isNotice: boolean;
   createdAt: Date;
   updatedAt: Date;
-  user: UserSimpleInfoDto;
+  commentCount: number;
+  likeCount: number;
+  nickname: string;
+  profileImage: string;
 
-  constructor(article: Article) {
-    this.id = article.id;
-    this.title = article.title;
-    this.content = article?.content.substring(0, 100) ?? '';
-    this.createdAt = article.createdAt;
-    this.updatedAt = article.updatedAt;
-    this.user = new UserSimpleInfoDto(article.user);
+  constructor(queryResult) {
+    super(queryResult);
+    if (!queryResult) return;
+    const maxPreviewLength = 50;
+    this.content = this.content
+      ? this.content.length > maxPreviewLength
+        ? this.content.substring(0, maxPreviewLength) + '...'
+        : this.content
+      : '';
   }
 }
