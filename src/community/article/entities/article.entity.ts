@@ -13,12 +13,6 @@ export class Article extends CommunityBaseEntity {
   @Column('text', { default: '' })
   content: string;
 
-  @Column({ default: 0 })
-  commentCount: number;
-
-  @Column({ default: 0 })
-  likeCount: number;
-
   @Column({ default: false })
   isNotice: boolean;
 
