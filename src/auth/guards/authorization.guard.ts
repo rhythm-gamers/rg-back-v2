@@ -4,6 +4,7 @@ import { UserRole } from 'src/common/enum/user-role.enum';
 import { ADMIN_KEY } from 'src/common/metadata/admin.metadata';
 import { MAINTAINER_KEY } from 'src/common/metadata/maintainer.metadata';
 import { SKIP_AUTH_KEY } from 'src/common/metadata/skip-auth.metadata';
+import { getUserFromRequest } from 'src/common/utils/user-request-handler';
 import { User } from 'src/user/entity/user.entity';
 
 @Injectable()
@@ -16,7 +17,7 @@ export class AuthorizationGuard implements CanActivate {
     if (skipAuth) return true;
 
     const request = context.switchToHttp().getRequest();
-    const user: User = request.user;
+    const user: User = getUserFromRequest(request);
 
     const isAdmin = this.reflector.get<boolean>(ADMIN_KEY, ctxHandler);
     const isMaintainer = this.reflector.get<boolean>(MAINTAINER_KEY, ctxHandler);

@@ -9,6 +9,7 @@ import { RenewPasswordDto } from './dto/renew-password.dto';
 import { TokenType } from 'src/common/enum/token-type.enum';
 import { RenewTokenGuard } from './guards/renew-token.guard';
 import { CommonType } from 'src/common/enum/common.type';
+import { getUserFromRequest } from 'src/common/utils/user-request-handler';
 
 @Controller('auth')
 export class AuthController {
@@ -28,10 +29,10 @@ export class AuthController {
   @Post('/signin')
   async signin(@Req() req, @Res() res, @Body() body: SigninDto) {
     try {
-      const token: string[] = await this.authService.signin(body);
+      const [accessToken, refreshToken] = await this.authService.signin(body);
 
-      this.authService.addCookie(res, TokenType.ACCESS_TOKEN, token[0], CommonType.TTL_HOUR);
-      res.status(HttpStatus.OK).send({ refreshToken: token[1] });
+      this.authService.addCookie(res, TokenType.ACCESS_TOKEN, accessToken, CommonType.TTL_HOUR);
+      res.status(HttpStatus.OK).send({ refreshToken: refreshToken });
     } catch (err) {
       res.status(HttpStatus.BAD_REQUEST).send(err.message);
     }
@@ -39,7 +40,7 @@ export class AuthController {
 
   @Post('/signout')
   async signout(@Req() req, @Res() res) {
-    const user: User = req.user;
+    const user: User = getUserFromRequest(req);
     await this.authService.signout(user);
 
     this.authService.removeCookie(res, TokenType.ACCESS_TOKEN);
@@ -48,7 +49,7 @@ export class AuthController {
 
   @Put('/renew-password')
   async renewPassword(@Req() req, @Res() res: Response, @Body() dto: RenewPasswordDto) {
-    const user: User = this.getUserFromRequest(req);
+    const user: User = getUserFromRequest(req);
     await this.authService.renewPassword(user.id, dto.password);
 
     this.authService.removeCookie(res, TokenType.ACCESS_TOKEN);
@@ -59,23 +60,19 @@ export class AuthController {
   @UseGuards(RenewTokenGuard)
   @Post('/renew-token')
   async renewToken(@Req() req, @Res() res: Response) {
-    const user: User = this.getUserFromRequest(req);
-    const accessToken: string = await this.authService.renewToken(user);
+    const user: User = getUserFromRequest(req);
+    const [accessToken, refreshToken] = await this.authService.renewToken(user);
 
     this.authService.addCookie(res, TokenType.ACCESS_TOKEN, accessToken, CommonType.TTL_HOUR);
-    res.send();
+    res.send(refreshToken);
   }
 
   @Delete('/withdraw')
   async withdraw(@Req() req, @Res() res) {
-    const user: User = req.user;
+    const user: User = getUserFromRequest(req);
     await this.authService.withdraw(user.id);
 
     this.authService.removeCookie(res, TokenType.ACCESS_TOKEN);
     res.status(HttpStatus.NO_CONTENT).send();
-  }
-
-  private getUserFromRequest(req) {
-    return req.user;
   }
 }

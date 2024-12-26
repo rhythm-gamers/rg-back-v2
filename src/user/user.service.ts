@@ -53,11 +53,10 @@ export class UserService {
 
           if (Array.isArray(relation)) {
             for (const item of relation) {
-              console.log(item);
-              manager.remove(item);
+              await manager.remove(item);
             }
           } else {
-            manager.remove(relation);
+            await manager.remove(relation);
           }
         }
 
@@ -71,6 +70,7 @@ export class UserService {
 
         redisTransaction.set(`${RedisPrefix.DUP_NAME}:${username}`, CommonType.FALSE, 'EX', RedisTTL.TTL_DAY);
         redisTransaction.set(`${RedisPrefix.DUP_NICK}:${nickname}`, CommonType.FALSE, 'EX', RedisTTL.TTL_DAY);
+        redisTransaction.del(`${RedisPrefix.REFRESH_TOKEN}:${uuid}`);
 
         const redisResult = await new Promise((resolve, reject) => {
           redisTransaction.exec((err, replies) => {

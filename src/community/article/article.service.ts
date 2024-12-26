@@ -140,17 +140,10 @@ export class ArticleService {
 
     const existingLike = await this.articleLikeRepository.findOne({
       where: {
-        user: {
-          id: user.id,
-        },
-        article: {
-          id: articleId,
-        },
+        user: { id: user.id },
+        article: { id: articleId },
       },
-      relations: ['user', 'article'],
     });
-
-    console.log(existingLike);
 
     if (existingLike) {
       await this.articleRepository.manager.transaction(async manager => {

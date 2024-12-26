@@ -3,6 +3,7 @@ import { PatternPracticeProgressService } from '../services/pattern-practice-pro
 import { Response } from 'express';
 import { UpsertPatternPracticeProgressDto } from '../dto/upsert-pattern-practice-progress.dto';
 import { User } from 'src/user/entity/user.entity';
+import { getUserFromRequest } from 'src/common/utils/user-request-handler';
 
 @Controller('progress/pattern-practice')
 export class PatternPracticeProgressController {
@@ -10,7 +11,7 @@ export class PatternPracticeProgressController {
 
   @Post()
   async upsertPatternPracticeProgress(@Req() req, @Res() res: Response, @Body() dto: UpsertPatternPracticeProgressDto) {
-    const user: User = req.user;
+    const user: User = getUserFromRequest(req);
     const result = await this.patternPracticeProgressService.upsert(dto, user);
     res.send(result);
   }

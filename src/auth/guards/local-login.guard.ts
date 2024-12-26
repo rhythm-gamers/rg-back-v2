@@ -5,6 +5,7 @@ import { User } from 'src/user/entity/user.entity';
 import { BCryptService } from 'src/common/utils/bcrypt.service';
 import { SKIP_AUTH_KEY } from 'src/common/metadata/skip-auth.metadata';
 import { Repository } from 'typeorm';
+import { setUserToRequest } from 'src/common/utils/user-request-handler';
 
 @Injectable()
 export class LocalLoginGuard implements CanActivate {
@@ -29,7 +30,7 @@ export class LocalLoginGuard implements CanActivate {
     const isMatched = await this.bcryptService.match(password, user.password);
     if (!isMatched) return false;
 
-    request.user = user;
+    setUserToRequest(request, user);
     return true;
   }
 }

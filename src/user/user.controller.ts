@@ -5,6 +5,7 @@ import { User } from './entity/user.entity';
 import { UserDetailDto } from './dto/user-detail.dto';
 import { Response } from 'express';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { getUserFromRequest } from 'src/common/utils/user-request-handler';
 
 @Controller('user')
 export class UserController {
@@ -12,7 +13,7 @@ export class UserController {
 
   @Get()
   async profile(@Req() req, @Res() res) {
-    const user: User = req.user;
+    const user: User = getUserFromRequest(req);
     const detailDto: UserDetailDto = new UserDetailDto(user);
     res.send(detailDto);
   }
@@ -27,7 +28,7 @@ export class UserController {
 
   @Patch()
   async updateProfile(@Req() req, @Res() res: Response, @Body() data: UpdateProfileDto) {
-    const user: User = req.user;
+    const user: User = getUserFromRequest(req);
     await this.userService.updateProfile(user, data);
 
     res.status(HttpStatus.OK).send();
@@ -35,14 +36,14 @@ export class UserController {
 
   @Get('profile-image/url')
   async generateProfileImageUploadUrl(@Req() req, @Res() res: Response) {
-    const user: User = req.user;
+    const user: User = getUserFromRequest(req);
     const presignedUrl = this.userService.generatePresignedUrl(user.id);
     res.status(HttpStatus.OK).send({ url: presignedUrl });
   }
 
   @Post('profile-image')
   async uploadProfileImage(@Req() req, @Res() res: Response) {
-    const user: User = req.user;
+    const user: User = getUserFromRequest(req);
     await this.userService.uploadProfileImage(user.id);
     res.status(HttpStatus.OK).send();
   }

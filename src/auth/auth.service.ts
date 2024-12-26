@@ -63,9 +63,15 @@ export class AuthService {
     await this.userService.withdraw(userId);
   }
 
-  async renewToken(user: User): Promise<string> {
+  async renewToken(user: User): Promise<string[]> {
     const accessPayload: AccessTokenPayload = new AccessTokenPayload(user.id, user.nickname);
-    return await this.tokenService.sign(accessPayload, CommonType.TTL_HOUR);
+    const refreshPayload: RefreshTokenPayload = new RefreshTokenPayload(user.id);
+
+    const accessToken: string = await this.tokenService.sign(accessPayload, CommonType.TTL_HOUR);
+    const refreshToken: string = await this.tokenService.sign(refreshPayload, CommonType.TTL_DAY * 7);
+
+    await this.redisRepository.set(`${RedisPrefix.REFRESH_TOKEN}:${user.id}`, refreshToken, RedisTTL.TTL_DAY * 7);
+    return [accessToken, refreshToken];
   }
 
   async renewPassword(uuid: string, plainPw: string) {
