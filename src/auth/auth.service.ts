@@ -11,6 +11,7 @@ import { Response } from 'express';
 import { RefreshTokenPayload } from './dto/refresh-token.payload';
 import { RedisRepository } from 'src/common/utils/redis.repository';
 import { TokenType } from 'src/common/enum/token-type.enum';
+import { RedisPrefix } from 'src/common/enum/redis-prefix.enum';
 
 const cookieOptions = {
   sameSite: 'none' as const,
@@ -48,13 +49,13 @@ export class AuthService {
     const accessToken = await this.tokenService.sign(accessPayload, CommonType.TTL_HOUR);
     const refreshToken = await this.tokenService.sign(refreshPayload, CommonType.TTL_DAY * 7);
 
-    this.redisRepository.set(`${TokenType.REFRESH_TOKEN_REDIS}:${user.id}`, refreshToken, CommonType.TTL_DAY * 7);
+    await this.redisRepository.set(`${RedisPrefix.REFRESH_TOKEN}:${user.id}`, refreshToken, CommonType.TTL_DAY * 7);
 
     return [accessToken, refreshToken];
   }
 
-  async signout(accessToken: string) {
-    await this.redisRepository.del([`${TokenType.ACCESS_TOKEN_REDIS}:${accessToken}`]);
+  async signout(user: User) {
+    await this.redisRepository.del([`${RedisPrefix.REFRESH_TOKEN}:${user.id}`]);
   }
 
   async withdraw(userId: string) {
@@ -69,7 +70,7 @@ export class AuthService {
   async renewPassword(uuid: string, plainPw: string) {
     const encrypted = await this.bcryptService.encrypt(plainPw);
 
-    this.redisRepository.del([`${TokenType.REFRESH_TOKEN_REDIS}:${uuid}`]);
+    await this.redisRepository.del([`${RedisPrefix.REFRESH_TOKEN}:${uuid}`]);
     await this.userService.renewal(uuid, encrypted);
   }
 

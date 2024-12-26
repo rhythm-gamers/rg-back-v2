@@ -9,6 +9,7 @@ import { SKIP_AUTH_KEY } from 'src/common/metadata/skip-auth.metadata';
 import { TokenType } from 'src/common/enum/token-type.enum';
 import { RedisRepository } from 'src/common/utils/redis.repository';
 import { CommonType } from 'src/common/constants/common.type';
+import { RedisPrefix } from 'src/common/enum/redis-prefix.enum';
 
 @Injectable()
 export class TokenLoginGuard implements CanActivate {
@@ -38,7 +39,7 @@ export class TokenLoginGuard implements CanActivate {
       const user: User = await this.userRepository.findOneBy({ id: decoded.id });
       request.user = user;
     } catch (err) {
-      this.redisRepository.set(`${TokenType.RENEW_REDIS}:${payload.id}`, 0, CommonType.TTL_MIN);
+      await this.redisRepository.set(`${RedisPrefix.RENEW_TOKEN}:${payload.id}`, 0, CommonType.TTL_MIN);
       throw new UnauthorizedException(err.message);
     }
     return true;

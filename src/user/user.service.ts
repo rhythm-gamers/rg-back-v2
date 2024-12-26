@@ -11,22 +11,21 @@ import { BackupUser } from './entity/backup-user.entity';
 import { S3BucketService } from 'src/common/utils/s3-bucket.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { getDecoratorFields } from 'src/common/utils/get-decorator-field';
+import { RedisPrefix } from 'src/common/enum/redis-prefix.enum';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    @InjectRepository(BackupUser)
-    private readonly backupUserRepository: Repository<BackupUser>,
     private readonly redisRepository: RedisRepository,
     private readonly s3BucketService: S3BucketService,
   ) {}
 
   async save(user: User) {
     await this.userRepository.save(user);
-    await this.redisRepository.set(`DUP_NAME:${user.username}`, CommonType.TRUE, CommonType.TTL_DAY);
-    await this.redisRepository.set(`DUP_NICK:${user.nickname}`, CommonType.TRUE, CommonType.TTL_DAY);
+    await this.redisRepository.set(`${RedisPrefix.DUP_NAME}:${user.username}`, CommonType.TRUE, CommonType.TTL_DAY);
+    await this.redisRepository.set(`${RedisPrefix.DUP_NICK}:${user.nickname}`, CommonType.TRUE, CommonType.TTL_DAY);
   }
 
   async withdraw(uuid: string) {
@@ -69,8 +68,8 @@ export class UserService {
         await manager.save(User, user);
         await manager.save(BackupUser, backup);
 
-        redisTransaction.set(`DUP_NAME:${username}`, CommonType.FALSE, 'EX', CommonType.TTL_DAY);
-        redisTransaction.set(`DUP_NICK:${nickname}`, CommonType.FALSE, 'EX', CommonType.TTL_DAY);
+        redisTransaction.set(`${RedisPrefix.DUP_NAME}:${username}`, CommonType.FALSE, 'EX', CommonType.TTL_DAY);
+        redisTransaction.set(`${RedisPrefix.DUP_NICK}:${nickname}`, CommonType.FALSE, 'EX', CommonType.TTL_DAY);
 
         const redisResult = await new Promise((resolve, reject) => {
           redisTransaction.exec((err, replies) => {
@@ -131,39 +130,39 @@ export class UserService {
   }
 
   async checkDuplicatedUsername(username: string): Promise<void> {
-    const redisVal: string = await this.redisRepository.get(`DUP_NAME:${username}`);
+    const redisVal: string = await this.redisRepository.get(`${RedisPrefix.DUP_NAME}:${username}`);
     if (redisVal) {
       if (Number(redisVal) === CommonType.TRUE) throw new ConflictException('중복된 회원명입니다');
     } else {
       const user: User = await this.userRepository.findOneBy({ username: username });
       if (user) throw new ConflictException('중복된 회원명입니다');
-      await this.redisRepository.set(`DUP_NAME:${username}`, CommonType.FALSE, CommonType.TTL_DAY);
+      await this.redisRepository.set(`${RedisPrefix.DUP_NAME}:${username}`, CommonType.FALSE, CommonType.TTL_DAY);
     }
   }
 
   async checkDuplicatedNickname(nickname: string): Promise<void> {
     if (!nickname) return;
-    const redisVal = await this.redisRepository.get(`DUP_NICK:${nickname}`);
+    const redisVal = await this.redisRepository.get(`${RedisPrefix.DUP_NICK}:${nickname}`);
     if (redisVal) {
       if (Number(redisVal) === CommonType.TRUE) throw new ConflictException('중복된 닉네임입니다');
     } else {
       const user: User = await this.userRepository.findOneBy({ nickname: nickname });
       if (user) throw new ConflictException('중복된 닉네임입니다');
-      await this.redisRepository.set(`DUP_NICK:${nickname}`, CommonType.FALSE, CommonType.TTL_DAY);
+      await this.redisRepository.set(`${RedisPrefix.DUP_NICK}:${nickname}`, CommonType.FALSE, CommonType.TTL_DAY);
     }
   }
 
   async generatePresignedUrl(uuid: string): Promise<string> {
     const presignedUrl: string = await this.s3BucketService.createPresignedUrl(this.generateProfileImagePath(uuid));
-    await this.redisRepository.set(`P_IMAGE:${uuid}`, presignedUrl);
+    await this.redisRepository.set(`${RedisPrefix.PRESIGNED_IMAGE_URL}:${uuid}`, presignedUrl);
     return presignedUrl;
   }
 
   async uploadProfileImage(uuid: string): Promise<void> {
-    const val = await this.redisRepository.get(`P_IMAGE:${uuid}`);
+    const val = await this.redisRepository.get(`${RedisPrefix.PRESIGNED_IMAGE_URL}:${uuid}`);
     if (!val) throw new BadRequestException('presigned url을 먼저 발급해주세요');
     await this.userRepository.update({ id: uuid }, { profileImage: this.generateProfileImagePath(uuid) });
-    await this.redisRepository.del([`P_IMAGE:${uuid}`]);
+    await this.redisRepository.del([`${RedisPrefix.PRESIGNED_IMAGE_URL}:${uuid}`]);
   }
 
   private generateProfileImagePath(uuid: string): string {
@@ -172,7 +171,7 @@ export class UserService {
 
   private async toggleNicknameUsage(prevNick: string, nickname: string): Promise<void> {
     if (!nickname) return;
-    await this.redisRepository.set(`DUP_NICK:${prevNick}`, CommonType.FALSE, CommonType.TTL_DAY);
-    await this.redisRepository.set(`DUP_NICK:${nickname}`, CommonType.TRUE, CommonType.TTL_DAY);
+    await this.redisRepository.set(`${RedisPrefix.DUP_NICK}:${prevNick}`, CommonType.FALSE, CommonType.TTL_DAY);
+    await this.redisRepository.set(`${RedisPrefix.DUP_NICK}:${nickname}`, CommonType.TRUE, CommonType.TTL_DAY);
   }
 }
