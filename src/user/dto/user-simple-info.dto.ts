@@ -1,11 +1,9 @@
-import { User } from '../entity/user.entity';
-
 export class UserSimpleInfoDto {
   nickname: string;
   profileImage: string;
 
-  constructor(user: User) {
-    this.nickname = user.nickname;
-    this.profileImage = user.profileImage;
+  constructor(nickname: string, profileImage: string) {
+    this.nickname = nickname;
+    this.profileImage = profileImage;
   }
 }
