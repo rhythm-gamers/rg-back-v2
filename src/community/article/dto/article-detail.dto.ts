@@ -1,24 +1,29 @@
-import { Article } from '../entities/article.entity';
-import { UserSimpleInfoDto } from 'src/user/dto/user-simple-info.dto';
-
 export class ArticleDetailDto {
   id: number;
-  createdAt: Date;
-  updatedAt: Date;
   title: string;
   content: string;
+  isNotice: boolean;
+  createdAt: Date;
+  updatedAt: Date;
   commentCount: number;
   likeCount: number;
-  user: UserSimpleInfoDto;
+  nickname: string;
+  profileImage: string;
 
-  constructor(article: Article) {
-    this.id = article.id;
-    this.createdAt = article.createdAt;
-    this.updatedAt = article.updatedAt;
-    this.title = article.title;
-    this.content = article.content;
-    this.user = new UserSimpleInfoDto(article.user);
-    this.commentCount = article.commentCount;
-    this.likeCount = article.likeCount;
+  constructor(queryResult) {
+    if (!queryResult) {
+      this.id = null;
+      return;
+    }
+    this.id = Number(queryResult.id);
+    this.title = queryResult.title;
+    this.content = queryResult.content;
+    this.isNotice = queryResult.isNotice === 'true';
+    this.createdAt = new Date(queryResult?.createdAt);
+    this.updatedAt = queryResult.updatedAt ? new Date(queryResult.updatedAt) : null;
+    this.commentCount = Number(queryResult.commentCount);
+    this.likeCount = Number(queryResult.likeCount);
+    this.nickname = queryResult.nickname;
+    this.profileImage = queryResult.profileImage;
   }
 }

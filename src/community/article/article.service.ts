@@ -40,41 +40,54 @@ export class ArticleService {
     return await this.articleRepository.save(article);
   }
 
-  async getNoticeArticles(boardname: string) {
-    const articles: Article[] = await this.articleRepository.find({
-      where: {
-        board: {
-          title: boardname,
-        },
-        isNotice: true,
-      },
-      relations: ['user'],
-      take: 10,
-      order: { id: 'DESC' },
-    });
+  getArticleQueryBuilder() {
+    return this.articleRepository
+      .createQueryBuilder('a')
+      .innerJoin('a.user', 'u')
+      .leftJoin('a.comments', 'c')
+      .leftJoin('a.likes', 'al')
+      .select([
+        'a.id as id',
+        'a.title as title',
+        'a.content as content',
+        'a.isNotice as isNotice',
+        'a.createdAt as createdAt',
+        'a.updatedAt as updatedAt',
+        'u.nickname as nickname',
+        'u.profileImage as profileImage',
+        'COUNT(DISTINCT c.id) as commentCount',
+        'COUNT(DISTINCT al.id) as likeCount',
+      ])
+      .groupBy('a.id')
+      .having('a.id IS NOT NULL')
+      .orderBy('a.id', 'DESC');
+  }
+
+  async getNoticeArticles(boardname: string): Promise<SimpleArticleDetailDto[]> {
+    const articles = await this.getArticleQueryBuilder()
+      .innerJoin('a.board', 'b')
+      .where('b.title = :boardname', { boardname })
+      .andWhere('a.isNotice = :bool', { bool: true })
+      .limit(20)
+      .getRawMany();
 
     return articles.map(article => new SimpleArticleDetailDto(article));
   }
 
   async getPagenatedArticles(boardname: string, page: number, take: number): Promise<SimpleArticleDetailDto[]> {
-    const articles: Article[] = await this.articleRepository.find({
-      where: {
-        board: { title: boardname },
-      },
-      relations: ['user'],
-      skip: (page - 1) * take,
-      take,
-      order: { id: 'DESC' },
-    });
+    const articles: object[] = await this.getArticleQueryBuilder()
+      .innerJoin('a.board', 'b')
+      .where('b.title = :boardname', { boardname })
+      .offset((page - 1) * take)
+      .limit(take)
+      .getRawMany();
 
     return articles.map(article => new SimpleArticleDetailDto(article));
   }
 
   async getArticle(id: number): Promise<ArticleDetailDto> {
-    const article: Article = await this.articleRepository.findOneOrFail({
-      where: { id },
-      relations: ['user'],
-    });
+    const article = await this.getArticleQueryBuilder().where('a.id = :id', { id }).getRawOne();
+
     return new ArticleDetailDto(article);
   }
 
@@ -141,21 +154,16 @@ export class ArticleService {
 
     if (existingLike) {
       await this.articleRepository.manager.transaction(async manager => {
-        article.likeCount -= 1;
         await manager.remove(ArticleLike, existingLike);
-        await manager.save(Article, article);
       });
       return ToggleResult.TOGGLE_DELETE;
     } else {
-      article.likeCount += 1;
-
       const articleLike: ArticleLike = new ArticleLike();
       articleLike.user = user;
       articleLike.article = article;
 
       await this.articleRepository.manager.transaction(async manager => {
         await manager.save(ArticleLike, articleLike);
-        await manager.save(Article, article);
       });
       return ToggleResult.TOGGLE_APPEND;
     }
