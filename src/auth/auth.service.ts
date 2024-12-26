@@ -6,7 +6,7 @@ import { UserService } from 'src/user/user.service';
 import { SignupDto } from './dto/signup.dto';
 import { AccessTokenPayload } from './dto/access-token.payload';
 import { TokenService } from 'src/common/utils/token.service';
-import { CommonType } from 'src/common/constants/common.type';
+import { CommonType } from 'src/common/enum/common.type';
 import { Response } from 'express';
 import { RefreshTokenPayload } from './dto/refresh-token.payload';
 import { RedisRepository } from 'src/common/utils/redis.repository';

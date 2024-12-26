@@ -8,7 +8,7 @@ import { User } from 'src/user/entity/user.entity';
 import { RenewPasswordDto } from './dto/renew-password.dto';
 import { TokenType } from 'src/common/enum/token-type.enum';
 import { RenewTokenGuard } from './guards/renew-token.guard';
-import { CommonType } from 'src/common/constants/common.type';
+import { CommonType } from 'src/common/enum/common.type';
 
 @Controller('auth')
 export class AuthController {

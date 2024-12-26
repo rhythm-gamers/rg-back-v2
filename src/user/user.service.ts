@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, Injectable } from '@nestjs/comm
 import { User } from './entity/user.entity';
 import { Repository } from 'typeorm';
 import { RedisRepository } from 'src/common/utils/redis.repository';
-import { CommonType } from 'src/common/constants/common.type';
+import { CommonType } from 'src/common/enum/common.type';
 import { InjectRepository } from '@nestjs/typeorm';
 import { nullifyEntity } from 'src/common/utils/nullify-entity';
 import { UserDetailDto } from './dto/user-detail.dto';
