@@ -39,8 +39,8 @@ export class AuthController {
 
   @Post('/signout')
   async signout(@Req() req, @Res() res) {
-    const accessToken: string = req.cookies.access_token;
-    this.authService.signout(accessToken);
+    const user: User = req.user;
+    await this.authService.signout(user);
 
     this.authService.removeCookie(res, TokenType.ACCESS_TOKEN);
     res.status(HttpStatus.NO_CONTENT).send();
