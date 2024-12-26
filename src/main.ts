@@ -7,14 +7,13 @@ import { TokenService } from './common/utils/token.service';
 import { BCryptService } from './common/utils/bcrypt.service';
 import { AuthorizationGuard } from './auth/guards/authorization.guard';
 import { ValidationPipe } from '@nestjs/common';
-import { RedisRepository } from './common/utils/redis.repository';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.use(cookieParser());
 
   app.useGlobalGuards(
-    new TokenLoginGuard(app.get('UserRepository'), app.get(TokenService), app.get(Reflector), app.get(RedisRepository)),
+    new TokenLoginGuard(app.get('UserRepository'), app.get(TokenService), app.get(Reflector)),
     new LocalLoginGuard(app.get('UserRepository'), app.get(BCryptService), app.get(Reflector)),
     new AuthorizationGuard(app.get(Reflector)),
   );

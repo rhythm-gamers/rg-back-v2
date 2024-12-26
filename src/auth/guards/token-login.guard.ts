@@ -7,9 +7,7 @@ import { AccessTokenPayload } from '../dto/access-token.payload';
 import { Reflector } from '@nestjs/core';
 import { SKIP_AUTH_KEY } from 'src/common/metadata/skip-auth.metadata';
 import { TokenType } from 'src/common/enum/token-type.enum';
-import { RedisRepository } from 'src/common/utils/redis.repository';
-import { RedisPrefix } from 'src/common/enum/redis-prefix.enum';
-import { RedisTTL } from 'src/common/enum/redis-ttl.enum';
+import { setUserToRequest } from 'src/common/utils/user-request-handler';
 
 @Injectable()
 export class TokenLoginGuard implements CanActivate {
@@ -18,7 +16,6 @@ export class TokenLoginGuard implements CanActivate {
     private readonly userRepository: Repository<User>,
     private readonly tokenService: TokenService,
     private readonly reflector: Reflector,
-    private readonly redisRepository: RedisRepository,
   ) {}
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const skipAuth = this.reflector.get<boolean>(SKIP_AUTH_KEY, context.getHandler());
@@ -27,19 +24,17 @@ export class TokenLoginGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     if (request.user) return true;
 
-    let accessToken: string = request.cookies[TokenType.ACCESS_TOKEN];
+    const accessToken: string = request.cookies[TokenType.ACCESS_TOKEN];
     if (!accessToken) return true;
-
-    accessToken = accessToken.substring(TokenType.TYPE.length + 1);
-    const payload: AccessTokenPayload = JSON.parse(atob(accessToken.split('.')[1]));
 
     try {
       // TokenType.TYPE === 'Bearer', 따라서 띄어쓰기를 포함하려면 +1 필요
-      const decoded: AccessTokenPayload = await this.tokenService.verify(accessToken);
+      const decoded: AccessTokenPayload = await this.tokenService.verify(
+        accessToken.substring(TokenType.TYPE.length + 1),
+      );
       const user: User = await this.userRepository.findOneBy({ id: decoded.id });
-      request.user = user;
+      setUserToRequest(request, user);
     } catch (err) {
-      await this.redisRepository.set(`${RedisPrefix.RENEW_TOKEN}:${payload.id}`, 0, RedisTTL.TTL_MIN);
       throw new UnauthorizedException(err.message);
     }
     return true;
