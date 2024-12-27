@@ -81,6 +81,10 @@ export class AuthService {
     await this.userService.renewal(uuid, encrypted);
   }
 
+  async setSteamUidToRedis(steamid: string) {
+    await this.redisRepository.set(`${RedisPrefix.STEAM}:${steamid}`, 0, RedisTTL.TTL_MIN * 5);
+  }
+
   addCookie(res: Response, key: string, val: string, ttlSec: number) {
     res.cookie(key, `${TokenType.TYPE} ${val}`, { ...cookieOptions, maxAge: ttlSec * 1000 });
   }

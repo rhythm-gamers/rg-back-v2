@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, HttpStatus, Post, Put, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpStatus, Post, Put, Req, Res, UseGuards } from '@nestjs/common';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { SignupDto } from './dto/signup.dto';
@@ -10,10 +10,24 @@ import { TokenType } from 'src/common/enum/token-type.enum';
 import { RenewTokenGuard } from './guards/renew-token.guard';
 import { CommonType } from 'src/common/enum/common.type';
 import { getUserFromRequest } from 'src/common/utils/user-request-handler';
+import SteamAuth = require('node-steam-openid');
+import { ConfigService } from '@nestjs/config';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  private steam: SteamAuth;
+
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {
+    this.steam = new SteamAuth({
+      realm: this.configService.get('STEAM_REALM'),
+      returnUrl: this.configService.get('STEAM_RETURN_URL'),
+      apiKey: this.configService.get('STEAM_API_KEY'),
+    });
+  }
+
   @SkipAuth()
   @Post('/signup')
   async signup(@Req() req, @Res() res: Response, @Body() body: SignupDto) {
@@ -74,5 +88,24 @@ export class AuthController {
 
     this.authService.removeCookie(res, TokenType.ACCESS_TOKEN);
     res.status(HttpStatus.NO_CONTENT).send();
+  }
+
+  @SkipAuth()
+  @Get('steam')
+  async getSteamRedirectUrl(@Res() res: Response) {
+    const redirectUrl = await this.steam.getRedirectUrl();
+    res.redirect(redirectUrl);
+  }
+
+  @SkipAuth()
+  @Get('steam/authenticate')
+  async steamAuthenticate(@Req() req, @Res() res: Response) {
+    try {
+      const user = await this.steam.authenticate(req);
+      await this.authService.setSteamUidToRedis(user.steamid);
+      res.redirect('https://www.naver.com');
+    } catch (err) {
+      console.log(err);
+    }
   }
 }

@@ -5,4 +5,5 @@ export enum RedisPrefix {
   ACCESS_TOKEN = 'ACCESS',
   REFRESH_TOKEN = 'REFRESH',
   RENEW_TOKEN = 'RENEW',
+  STEAM = 'STEAM',
 }
