@@ -14,6 +14,7 @@ import { getDecoratorFields } from 'src/common/utils/get-decorator-field';
 import { RedisPrefix } from 'src/common/enum/redis-prefix.enum';
 import { RedisTTL } from 'src/common/enum/redis-ttl.enum';
 import { UpdateSteamIdDto } from './dto/update-steam-id.dto';
+import { SteamService } from 'src/steam/steam.service';
 
 @Injectable()
 export class UserService {
@@ -22,6 +23,7 @@ export class UserService {
     private readonly userRepository: Repository<User>,
     private readonly redisRepository: RedisRepository,
     private readonly s3BucketService: S3BucketService,
+    private readonly steamService: SteamService,
   ) {}
 
   async save(user: User) {
@@ -182,5 +184,11 @@ export class UserService {
     if (!isSteamIdIn) throw new BadRequestException('유효하지 않은 steamid 값입니다');
     await this.redisRepository.del([`${RedisPrefix.STEAM}:${dto.steamid}`]);
     await this.userRepository.update({ id: user.id }, dto);
+  }
+
+  async getMySteamGamesStatus(user: User) {
+    if (!user.steamid) throw new BadRequestException('steamid를 먼저 등록해주세요');
+    const result = await this.steamService.getOwnedGames(user.steamid);
+    return result;
   }
 }
