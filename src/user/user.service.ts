@@ -13,6 +13,7 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { getDecoratorFields } from 'src/common/utils/get-decorator-field';
 import { RedisPrefix } from 'src/common/enum/redis-prefix.enum';
 import { RedisTTL } from 'src/common/enum/redis-ttl.enum';
+import { UpdateSteamIdDto } from './dto/update-steam-id.dto';
 
 @Injectable()
 export class UserService {
@@ -174,5 +175,12 @@ export class UserService {
     if (!nickname) return;
     await this.redisRepository.set(`${RedisPrefix.DUP_NICK}:${prevNick}`, CommonType.FALSE, RedisTTL.TTL_DAY);
     await this.redisRepository.set(`${RedisPrefix.DUP_NICK}:${nickname}`, CommonType.TRUE, RedisTTL.TTL_DAY);
+  }
+
+  async updateSteamId(user: User, dto: UpdateSteamIdDto) {
+    const isSteamIdIn = await this.redisRepository.get(`${RedisPrefix.STEAM}:${dto.steamid}`);
+    if (!isSteamIdIn) throw new BadRequestException('유효하지 않은 steamid 값입니다');
+    await this.redisRepository.del([`${RedisPrefix.STEAM}:${dto.steamid}`]);
+    await this.userRepository.update({ id: user.id }, dto);
   }
 }
