@@ -29,6 +29,9 @@ export class User extends CommonEntity {
   @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
   role: UserRole;
 
+  @Column({ nullable: true })
+  steamid: string;
+
   @OneToOne(() => PlateData, data => data.user, { cascade: true })
   plateData: PlateData;
 

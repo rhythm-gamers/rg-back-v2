@@ -6,6 +6,7 @@ import { UserDetailDto } from './dto/user-detail.dto';
 import { Response } from 'express';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { getUserFromRequest } from 'src/common/utils/user-request-handler';
+import { UpdateSteamIdDto } from './dto/update-steam-id.dto';
 
 @Controller('user')
 export class UserController {
@@ -46,5 +47,12 @@ export class UserController {
     const user: User = getUserFromRequest(req);
     await this.userService.uploadProfileImage(user.id);
     res.status(HttpStatus.OK).send();
+  }
+
+  @Post('steam-id')
+  async updateSteamId(@Req() req, @Res() res: Response, @Body() body: UpdateSteamIdDto) {
+    const user: User = getUserFromRequest(req);
+    await this.userService.updateSteamId(user, body);
+    res.send();
   }
 }
