@@ -10,23 +10,16 @@ import { TokenType } from 'src/common/enum/token-type.enum';
 import { RenewTokenGuard } from './guards/renew-token.guard';
 import { CommonType } from 'src/common/enum/common.type';
 import { getUserFromRequest } from 'src/common/utils/user-request-handler';
-import SteamAuth = require('node-steam-openid');
 import { ConfigService } from '@nestjs/config';
+import { SteamService } from 'src/steam/steam.service';
 
 @Controller('auth')
 export class AuthController {
-  private steam: SteamAuth;
-
   constructor(
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
-  ) {
-    this.steam = new SteamAuth({
-      realm: this.configService.get('STEAM_REALM'),
-      returnUrl: this.configService.get('STEAM_RETURN_URL'),
-      apiKey: this.configService.get('STEAM_API_KEY'),
-    });
-  }
+    private readonly steamService: SteamService,
+  ) {}
 
   @SkipAuth()
   @Post('/signup')
@@ -93,7 +86,7 @@ export class AuthController {
   @SkipAuth()
   @Get('steam')
   async getSteamRedirectUrl(@Res() res: Response) {
-    const redirectUrl = await this.steam.getRedirectUrl();
+    const redirectUrl = await this.steamService.getRedirectUrl();
     res.redirect(redirectUrl);
   }
 
@@ -101,7 +94,7 @@ export class AuthController {
   @Get('steam/authenticate')
   async steamAuthenticate(@Req() req, @Res() res: Response) {
     try {
-      const user = await this.steam.authenticate(req);
+      const user = await this.steamService.authenticate(req);
       await this.authService.setSteamUidToRedis(user.steamid);
       res.redirect('https://www.naver.com');
     } catch (err) {

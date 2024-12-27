@@ -19,6 +19,13 @@ export class UserController {
     res.send(detailDto);
   }
 
+  @Get('steam-games')
+  async getMySteamGames(@Req() req, @Res() res: Response) {
+    const user: User = getUserFromRequest(req);
+    const result = await this.userService.getMySteamGamesStatus(user);
+    res.send(result);
+  }
+
   @SkipAuth()
   @Get('/:username')
   async otherProfile(@Req() req, @Res() res, @Param('username') username: string) {
