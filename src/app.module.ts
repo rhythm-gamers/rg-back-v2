@@ -14,11 +14,12 @@ import { PlateDataModule } from './plate-data/plate-data.module';
 import { ProgressModule } from './progress/progress.module';
 import { AssessmentModule } from './assessment/assessment.module';
 import { CommunityModule } from './community/community.module';
+import { FirebaseModule } from './firebase/firebase.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      envFilePath: ['.development.env'],
+      envFilePath: ['env/.development.env'],
       isGlobal: true,
     }),
     JwtModule.registerAsync({
@@ -37,6 +38,7 @@ import { CommunityModule } from './community/community.module';
     ProgressModule,
     AssessmentModule,
     CommunityModule,
+    FirebaseModule,
   ],
   controllers: [AppController],
   providers: [
