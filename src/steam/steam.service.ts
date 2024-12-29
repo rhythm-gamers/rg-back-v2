@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import SteamAuth = require('node-steam-openid');
+import * as SteamAuth from 'node-steam-openid';
 import axios from 'axios';
-import qs = require('qs');
+import * as qs from 'qs';
 import { SteamGamePartial } from './type/steam-game.type';
 import { SteamGameAchievement } from './type/steam-game-achievement.type';
 import { SteamGameRating } from './type/steam-game-rating.type';
