@@ -5,6 +5,7 @@ import axios from 'axios';
 import qs = require('qs');
 import { SteamGamePartial } from './type/steam-game.type';
 import { SteamGameAchievement } from './type/steam-game-achievement.type';
+import { SteamGameRating } from './type/steam-game-rating.type';
 
 const axiosInstance = axios.create({
   paramsSerializer: params => qs.stringify(params),
@@ -32,7 +33,22 @@ export class SteamService {
     return await this.steam.authenticate(req);
   }
 
-  async getOwnedGames(steamid: string): Promise<Record<string, number>> {
+  async calcSteamGameDevilRate(steamid: string) {
+    const myGames = await this.getOwnedGames(steamid);
+    const result = {};
+    for (const key in myGames) {
+      const g = myGames[key];
+      const rate = g.achieved < 5 ? this.checkPlaytime(g.playtime) : this.checkAchieved(g.achieved);
+      result[key] = {
+        rate: rate,
+        playtime: g.playtime,
+        achieved: g.achieved,
+      };
+    }
+    return result;
+  }
+
+  private async getOwnedGames(steamid: string): Promise<Record<string, SteamGameRating>> {
     const params = {
       key: this.steamApiKey,
       //   include_appinfo: true,
@@ -85,5 +101,20 @@ export class SteamService {
     } catch (err) {
       console.log(err);
     }
+  }
+
+  private checkPlaytime(playtime: number) {
+    playtime = playtime / 60;
+    if (playtime < 10) return 1;
+    if (playtime < 30) return 2;
+    if (playtime < 100) return 3;
+    return 4;
+  }
+
+  private checkAchieved(achieved: number) {
+    if (achieved < 25) return 1;
+    if (achieved < 50) return 2;
+    if (achieved < 75) return 3;
+    return 4;
   }
 }
