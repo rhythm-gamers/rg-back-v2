@@ -15,6 +15,7 @@ import { RedisPrefix } from 'src/common/enum/redis-prefix.enum';
 import { RedisTTL } from 'src/common/enum/redis-ttl.enum';
 import { UpdateSteamIdDto } from './dto/update-steam-id.dto';
 import { SteamService } from 'src/steam/steam.service';
+import { FirebaseService } from 'src/firebase/firebase.service';
 
 @Injectable()
 export class UserService {
@@ -24,6 +25,7 @@ export class UserService {
     private readonly redisRepository: RedisRepository,
     private readonly s3BucketService: S3BucketService,
     private readonly steamService: SteamService,
+    private readonly firebaseService: FirebaseService,
   ) {}
 
   async save(user: User) {
@@ -188,7 +190,8 @@ export class UserService {
 
   async getMySteamGamesStatus(user: User) {
     if (!user.steamid) throw new BadRequestException('steamid를 먼저 등록해주세요');
-    const result = await this.steamService.getOwnedGames(user.steamid);
+    const result = await this.steamService.calcSteamGameDevilRate(user.steamid);
+    await this.firebaseService.set(`v2/titles/${user.id}/steam`, result);
     return result;
   }
 }
