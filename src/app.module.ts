@@ -15,6 +15,7 @@ import { ProgressModule } from './progress/progress.module';
 import { AssessmentModule } from './assessment/assessment.module';
 import { CommunityModule } from './community/community.module';
 import { FirebaseModule } from './firebase/firebase.module';
+import { TaskCronModule } from './task-cron/task-cron.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { FirebaseModule } from './firebase/firebase.module';
     AssessmentModule,
     CommunityModule,
     FirebaseModule,
+    TaskCronModule,
   ],
   controllers: [AppController],
   providers: [
