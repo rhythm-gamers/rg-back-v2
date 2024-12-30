@@ -6,6 +6,7 @@ import * as qs from 'qs';
 import { SteamGamePartial } from './type/steam-game.type';
 import { SteamGameAchievement } from './type/steam-game-achievement.type';
 import { SteamGameRating } from './type/steam-game-rating.type';
+import { SteamGameDevilRate } from './type/steam-game-devil-rate.type';
 
 const axiosInstance = axios.create({
   paramsSerializer: params => qs.stringify(params),
@@ -33,7 +34,7 @@ export class SteamService {
     return await this.steam.authenticate(req);
   }
 
-  async calcSteamGameDevilRate(steamid: string) {
+  async calcSteamGameDevilRate(steamid: string): Promise<Record<string, SteamGameDevilRate>> {
     const myGames = await this.getOwnedGames(steamid);
     const result = {};
     for (const key in myGames) {
@@ -65,12 +66,19 @@ export class SteamService {
       });
       const games: SteamGamePartial[] = response?.data?.response?.games ?? [];
 
-      for (const game of games) {
-        const { total, achieved } = await this.getGamesAchievements(steamid, game.appid);
-        const playtime: number = game.playtime_forever; // 분 단위
-        results[game.appid] = {
-          playtime,
+      const promises = games.map(game =>
+        this.getGamesAchievements(steamid, game.appid).then(({ total, achieved }) => ({
+          appid: game.appid,
+          playtime: game.playtime_forever,
           achieved: ((achieved / total) * 100).toFixed(2),
+        })),
+      );
+      const resultsArray = await Promise.all(promises);
+
+      for (const game of resultsArray) {
+        results[game.appid] = {
+          playtime: game.playtime,
+          achieved: game.achieved,
         };
       }
 
