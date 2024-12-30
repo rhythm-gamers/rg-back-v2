@@ -7,7 +7,7 @@ import { Comment } from 'src/community/comment/entities/comment.entity';
 import { PlateData } from 'src/plate-data/entities/plate-data.entity';
 import { LevelTestProgress } from 'src/progress/entities/level-test-progress.entity';
 import { PatternPracticeProgress } from 'src/progress/entities/pattern-practice-progress.entity';
-import { Column, Entity, OneToMany, OneToOne } from 'typeorm';
+import { Column, Entity, Index, OneToMany, OneToOne } from 'typeorm';
 
 @Entity()
 export class User extends CommonEntity {
@@ -29,6 +29,7 @@ export class User extends CommonEntity {
   @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
   role: UserRole;
 
+  @Index()
   @Column({ nullable: true })
   steamid: string;
 
