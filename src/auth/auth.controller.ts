@@ -10,14 +10,13 @@ import { TokenType } from 'src/common/enum/token-type.enum';
 import { RenewTokenGuard } from './guards/renew-token.guard';
 import { CommonType } from 'src/common/enum/common.type';
 import { getUserFromRequest } from 'src/common/utils/user-request-handler';
-import { ConfigService } from '@nestjs/config';
 import { SteamService } from 'src/steam/steam.service';
+import { EmailVerificationDto } from './dto/email-verification.dto';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    private readonly configService: ConfigService,
     private readonly steamService: SteamService,
   ) {}
 
@@ -33,8 +32,22 @@ export class AuthController {
   }
 
   @SkipAuth()
+  @Post('email/send-code')
+  async sendCode(@Res() res: Response, @Body() emailDto: EmailVerificationDto) {
+    await this.authService.generateVerificationCode(emailDto.email);
+    res.status(HttpStatus.OK).send();
+  }
+
+  @SkipAuth()
+  @Post('email/verify-code')
+  async verifyCode(@Res() res: Response, @Body() emailDto: EmailVerificationDto) {
+    await this.authService.checkVerificationCode(emailDto.email, emailDto.code);
+    res.status(HttpStatus.OK).send();
+  }
+
+  @SkipAuth()
   @Post('/signin')
-  async signin(@Req() req, @Res() res, @Body() body: SigninDto) {
+  async signin(@Res() res, @Body() body: SigninDto) {
     try {
       const [accessToken, refreshToken] = await this.authService.signin(body);
 

@@ -1,3 +1,4 @@
+import { SignupDto } from 'src/auth/dto/signup.dto';
 import { CommonEntity } from 'src/common/entity/common.entity';
 import { UserRole } from 'src/common/enum/user-role.enum';
 import { ArticleLike } from 'src/community/article/entities/article-like.entity';
@@ -33,6 +34,9 @@ export class User extends CommonEntity {
   @Column({ nullable: true })
   steamid: string;
 
+  @Column({ nullable: true })
+  email: string;
+
   @OneToOne(() => PlateData, data => data.user, { cascade: true })
   plateData: PlateData;
 
@@ -54,12 +58,13 @@ export class User extends CommonEntity {
   @OneToMany(() => CommentLike, like => like.user, { cascade: ['remove', 'soft-remove'] })
   commentLikes: CommentLike[];
 
-  constructor(username: string, password: string, nickname: string, profileImage?: string) {
+  constructor(password: string, dto: SignupDto, profileImage?: string) {
     super();
-    this.username = username;
+    this.username = dto?.username || '';
     this.password = password;
-    this.nickname = nickname;
-    this.profileImage = profileImage ?? `user/profile/image/default`;
+    this.nickname = dto?.nickname || '';
+    this.email = dto?.email || '';
+    this.profileImage = profileImage || `user/profile/image/default`;
     this.plateData = new PlateData();
   }
 }

@@ -4,7 +4,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UserModule } from './user/user.module';
-import { DatabaseModule } from './config/database.module';
+import { databaseConfig } from './config/database.config';
 import { RedisRepository } from './common/utils/redis.repository';
 import { JwtModule } from '@nestjs/jwt';
 import { APP_FILTER } from '@nestjs/core';
@@ -16,6 +16,10 @@ import { AssessmentModule } from './assessment/assessment.module';
 import { CommunityModule } from './community/community.module';
 import { FirebaseModule } from './firebase/firebase.module';
 import { TaskCronModule } from './task-cron/task-cron.module';
+import { MailingModule } from './mailing/mailing.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { MailerModule } from '@nestjs-modules/mailer';
+import { mailerConfig } from './config/mailer.config';
 
 @Module({
   imports: [
@@ -30,7 +34,14 @@ import { TaskCronModule } from './task-cron/task-cron.module';
         secret: configService.get<string>('JWT_SECRET'),
       }),
     }),
-    DatabaseModule,
+    TypeOrmModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: databaseConfig,
+    }),
+    MailerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: mailerConfig,
+    }),
     UserModule,
     AuthModule,
     WikiModule,
@@ -41,6 +52,7 @@ import { TaskCronModule } from './task-cron/task-cron.module';
     CommunityModule,
     FirebaseModule,
     TaskCronModule,
+    MailingModule,
   ],
   controllers: [AppController],
   providers: [

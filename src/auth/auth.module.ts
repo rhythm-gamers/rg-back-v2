@@ -6,9 +6,10 @@ import { BCryptService } from 'src/common/utils/bcrypt.service';
 import { TokenService } from 'src/common/utils/token.service';
 import { RedisRepository } from 'src/common/utils/redis.repository';
 import { SteamModule } from 'src/steam/steam.module';
+import { MailingModule } from 'src/mailing/mailing.module';
 
 @Module({
-  imports: [UserModule, SteamModule],
+  imports: [UserModule, SteamModule, MailingModule],
   controllers: [AuthController],
   providers: [AuthService, BCryptService, TokenService, RedisRepository],
 })

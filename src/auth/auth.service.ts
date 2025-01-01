@@ -13,6 +13,8 @@ import { RedisRepository } from 'src/common/utils/redis.repository';
 import { TokenType } from 'src/common/enum/token-type.enum';
 import { RedisPrefix } from 'src/common/enum/redis-prefix.enum';
 import { RedisTTL } from 'src/common/enum/redis-ttl.enum';
+import { generateRandomCode } from 'src/common/utils/generate-random-code';
+import { MailingService } from 'src/mailing/mailing.service';
 
 const cookieOptions = {
   sameSite: 'none' as const,
@@ -27,15 +29,31 @@ export class AuthService {
     private readonly bcryptService: BCryptService,
     private readonly tokenService: TokenService,
     private readonly redisRepository: RedisRepository,
+    private readonly mailingService: MailingService,
   ) {}
 
-  async signup(body: SignupDto): Promise<void> {
-    await this.userService.checkDuplicatedUsername(body.username);
-    await this.userService.checkDuplicatedNickname(body.nickname);
+  async signup(signupDto: SignupDto): Promise<void> {
+    await this.userService.checkDuplicatedUsername(signupDto.username);
+    await this.userService.checkDuplicatedNickname(signupDto.nickname);
 
-    const encrypted: string = await this.bcryptService.encrypt(body.password);
-    const user: User = new User(body.username, encrypted, body.nickname);
+    const encrypted: string = await this.bcryptService.encrypt(signupDto.password);
+    const user: User = new User(encrypted, signupDto);
     await this.userService.save(user);
+  }
+
+  async generateVerificationCode(email: string) {
+    const vCode = generateRandomCode(6, 'n');
+    this.redisRepository.set(`${RedisPrefix.EMAIL_N_VERIFICATED}:${email}`, vCode, RedisTTL.TTL_MIN * 5);
+    this.mailingService.sendVerificationCode(email, vCode);
+  }
+
+  async checkVerificationCode(email: string, code: string) {
+    const vCode = await this.redisRepository.get(`${RedisPrefix.EMAIL_N_VERIFICATED}:${email}`);
+    if (!vCode) throw new BadRequestException('verification code is expired');
+    if (vCode !== code) throw new BadRequestException('wrong verification code');
+
+    this.redisRepository.del([`${RedisPrefix.EMAIL_N_VERIFICATED}:${email}`]);
+    this.redisRepository.set(`${RedisPrefix.EMAIL_VERIFICATED}:${email}`, 1, RedisTTL.TTL_HOUR); // 이후 회원가입 시 삭제
   }
 
   async signin(body: SigninDto): Promise<string[]> {
