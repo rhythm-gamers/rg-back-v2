@@ -6,4 +6,6 @@ export enum RedisPrefix {
   REFRESH_TOKEN = 'REFRESH',
   RENEW_TOKEN = 'RENEW',
   STEAM = 'STEAM',
+  EMAIL_N_VERIFICATED = 'EMAIL_B',
+  EMAIL_VERIFICATED = 'EMAIL_A',
 }
