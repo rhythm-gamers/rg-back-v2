@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import Redis from 'ioredis';
+import Redis, { ChainableCommander } from 'ioredis';
 
 @Injectable()
 export class RedisRepository {
@@ -17,29 +17,41 @@ export class RedisRepository {
     return await this.redisClient.get(key);
   }
 
-  async mget(keys: string[]): Promise<string[]> {
+  async mget(keys: string[]): Promise<Record<string, string>> {
     const clientResult = await this.redisClient.mget(keys);
-    const result = keys.reduce((prev, key, idx) => {
-      prev[key] = clientResult[idx];
-      return result;
+    return this.generateKeyValuePair(keys, clientResult);
+  }
+
+  async getdel(key: string): Promise<string> {
+    return await this.redisClient.getdel(key);
+  }
+
+  async mgetdel(keys: string[]): Promise<Record<string, string>> {
+    const clientResult = await this.redisClient.mget(keys);
+    this.redisClient.del(keys);
+    return this.generateKeyValuePair(keys, clientResult);
+  }
+
+  private generateKeyValuePair(keys: string[], values: string[]) {
+    return keys.reduce((prev, key, idx) => {
+      prev[key] = values[idx];
+      return prev;
     }, {});
-    return result;
   }
 
-  async set(key: string, value: string | number, ttl?: number) {
-    const result = ttl ? await this.redisClient.set(key, value, 'EX', ttl) : await this.redisClient.set(key, value);
-    return result;
+  async set(key: string, value: string | number, ttl?: number): Promise<'OK'> {
+    return ttl ? await this.redisClient.set(key, value, 'EX', ttl) : await this.redisClient.set(key, value);
   }
 
-  async del(keys: string[]) {
+  async del(keys: string[]): Promise<number> {
     return await this.redisClient.del(keys);
   }
 
-  discard() {
+  discard(): void {
     this.redisClient.discard();
   }
 
-  multi() {
+  multi(): ChainableCommander {
     return this.redisClient.multi();
   }
 }
