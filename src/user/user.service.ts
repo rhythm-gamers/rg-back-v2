@@ -49,21 +49,31 @@ export class UserService {
 
     try {
       await this.userRepository.manager.transaction(async manager => {
+        const removalPromises = [];
         for (const field of decoratorFields) {
           const relation = user[field];
           delete user[field];
 
-          if (field === 'comments' || !relation) continue;
-          if (Array.isArray(relation) && relation.length === 0) continue;
+          if (!relation) continue;
+          if (field === 'comments') {
+            continue;
+          }
+          if (field === 'articles') {
+            removalPromises.push(manager.softRemove(relation));
+            continue;
+          }
 
           if (Array.isArray(relation)) {
-            for (const item of relation) {
-              await manager.remove(item);
+            if (relation.length > 0) {
+              for (const item of relation) {
+                removalPromises.push(manager.remove(item));
+              }
             }
           } else {
-            await manager.remove(relation);
+            removalPromises.push(manager.remove(relation));
           }
         }
+        await Promise.all(removalPromises);
 
         const backup = new BackupUser(user);
         nullifyEntity(user, this.userRepository.metadata, ['id']);
