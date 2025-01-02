@@ -1,4 +1,4 @@
-import { BaseEntity, Column, CreateDateColumn, PrimaryGeneratedColumn } from 'typeorm';
+import { BaseEntity, Column, CreateDateColumn, DeleteDateColumn, PrimaryGeneratedColumn } from 'typeorm';
 
 export class CommunityBaseEntity extends BaseEntity {
   @PrimaryGeneratedColumn()
@@ -6,6 +6,9 @@ export class CommunityBaseEntity extends BaseEntity {
 
   @CreateDateColumn()
   createdAt: Date;
+
+  @DeleteDateColumn()
+  deletedAt: Date;
 
   @Column({ nullable: true })
   updatedAt: Date;
