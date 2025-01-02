@@ -22,7 +22,9 @@ export class FirebaseService {
    */
   async set(path: string, data: any) {
     const ref = this.getRef(path);
-    await ref.set(data, err => console.log(err));
+    await ref.set(data, err => {
+      if (err) console.log(err);
+    });
   }
 
   /**
@@ -34,12 +36,16 @@ export class FirebaseService {
    */
   async push(path: string, data: any) {
     const ref = this.getRef(path);
-    await ref.push(data, err => console.log(err));
+    await ref.push(data, err => {
+      if (err) console.log(err);
+    });
   }
 
   async update(path: string, data: any) {
     const ref = this.getRef(path);
-    await ref.update(data, err => console.log(err));
+    await ref.update(data, err => {
+      if (err) console.log(err);
+    });
   }
 
   async get(path: string) {
@@ -49,7 +55,9 @@ export class FirebaseService {
 
   async del(path: string) {
     const ref = this.getRef(path);
-    await ref.remove(err => console.log(err));
+    await ref.remove(err => {
+      if (err) console.log(err);
+    });
   }
 
   private getRef(path: string) {

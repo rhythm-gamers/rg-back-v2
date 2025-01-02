@@ -7,15 +7,17 @@ import { SkipAuth } from 'src/common/metadata/skip-auth.metadata';
 import { ToggleResult } from 'src/common/enum/toggle-result.enum';
 import { Response } from 'express';
 import { getUserFromRequest } from 'src/common/utils/user-request-handler';
+import { CommentDetailDto } from './dto/comment-detail.dto';
 
 @Controller('comment')
 export class CommentController {
   constructor(private readonly commentService: CommentService) {}
 
   @Post()
-  async create(@Req() req, @Body() createCommentDto: CreateCommentDto) {
+  async create(@Req() req, @Res() res: Response, @Body() createCommentDto: CreateCommentDto) {
     const user: User = getUserFromRequest(req);
-    return await this.commentService.create(user, createCommentDto);
+    await this.commentService.create(user, createCommentDto);
+    res.status(HttpStatus.CREATED).send();
   }
 
   @SkipAuth()
@@ -24,8 +26,10 @@ export class CommentController {
     @Query('articleId') articleId: string,
     @Query('page') page: string,
     @Query('take') take: string,
+    @Res() res: Response,
   ) {
-    return await this.commentService.pagenatedComments(+articleId, +page, +take);
+    const results: CommentDetailDto[] = await this.commentService.pagenatedComments(+articleId, +page, +take);
+    res.status(HttpStatus.OK).send(results);
   }
 
   @Get('mine')
@@ -35,15 +39,17 @@ export class CommentController {
   }
 
   @Patch(':id')
-  async update(@Req() req, @Param('id') id: string, @Body() updateCommentDto: UpdateCommentDto) {
+  async update(@Req() req, @Res() res: Response, @Param('id') id: string, @Body() updateCommentDto: UpdateCommentDto) {
     const user: User = getUserFromRequest(req);
-    return await this.commentService.update(+id, user, updateCommentDto);
+    await this.commentService.update(+id, user, updateCommentDto);
+    res.status(HttpStatus.OK).send();
   }
 
   @Delete(':id')
-  async remove(@Req() req, @Param('id') id: string) {
+  async remove(@Req() req, @Res() res: Response, @Param('id') id: string) {
     const user: User = getUserFromRequest(req);
     await this.commentService.remove(user, +id);
+    res.status(HttpStatus.NO_CONTENT).send();
   }
 
   @Put(':id')

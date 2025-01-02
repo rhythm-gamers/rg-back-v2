@@ -1,9 +1,10 @@
-import { Controller, Get, Post, Body, Param, Delete, Put } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Res, Query, HttpStatus, Patch } from '@nestjs/common';
 import { BoardService } from './board.service';
 import { Maintainer } from 'src/common/metadata/maintainer.metadata';
-import { UpsertBoardDto } from './dto/upsert-board.dto';
 import { CreateBoardDto } from './dto/create-board.dto';
 import { UpdateBoardDto } from './dto/update-board.dto';
+import { Response } from 'express';
+import { InfoBoardDto } from './dto/info-board.dto';
 
 @Controller('board')
 export class BoardController {
@@ -11,29 +12,35 @@ export class BoardController {
 
   @Maintainer()
   @Post()
-  async create(@Body() dto: CreateBoardDto) {
-    return await this.boardService.upsert(dto);
+  async create(@Res() res: Response, @Body() dto: CreateBoardDto) {
+    await this.boardService.create(dto);
+    res.status(HttpStatus.CREATED).send();
   }
 
   @Maintainer()
-  @Put(':title')
-  async update(@Param('title') title: string, @Body() dto: UpdateBoardDto) {
-    return await this.boardService.upsert(dto, title);
+  @Patch(':title')
+  async update(@Res() res: Response, @Param('title') title: string, @Body() dto: UpdateBoardDto) {
+    await this.boardService.update(title, dto);
+    res.status(HttpStatus.CREATED).send();
   }
 
   @Get()
-  findAll() {
-    return this.boardService.findAll();
+  async pagenatedBoards(@Res() res: Response, @Query('page') page: string, @Query('take') take: string) {
+    const results = await this.boardService.fetchPagenatedBoards(+page, +take);
+    const dto = results.forEach(result => new InfoBoardDto(result.title, result.description));
+    res.status(HttpStatus.OK).send(dto);
   }
 
   @Get(':title')
-  async findOne(@Param('title') title: string) {
-    return await this.boardService.findOne(title);
+  async findOne(@Res() res: Response, @Param('title') title: string) {
+    const result = await this.boardService.findOne(title);
+    res.status(HttpStatus.OK).send(result);
   }
 
   @Maintainer()
   @Delete(':title')
-  async remove(@Param('title') title: string) {
-    return await this.boardService.remove(title);
+  async remove(@Res() res: Response, @Param('title') title: string) {
+    await this.boardService.remove(title);
+    res.status(HttpStatus.NO_CONTENT).send();
   }
 }

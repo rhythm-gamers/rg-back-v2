@@ -20,6 +20,7 @@ import { MailingModule } from './mailing/mailing.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { mailerConfig } from './config/mailer.config';
+import { RabbitmqModule } from './rabbitmq/rabbitmq.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { mailerConfig } from './config/mailer.config';
     FirebaseModule,
     TaskCronModule,
     MailingModule,
+    RabbitmqModule,
   ],
   controllers: [AppController],
   providers: [

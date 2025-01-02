@@ -1,8 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Board } from './entities/board.entity';
 import { Repository } from 'typeorm';
-import { UpsertBoardDto } from './dto/upsert-board.dto';
 import { CreateBoardDto } from './dto/create-board.dto';
 import { UpdateBoardDto } from './dto/update-board.dto';
 
@@ -13,37 +12,35 @@ export class BoardService {
     private readonly boardRepository: Repository<Board>,
   ) {}
 
-  async upsert(upsertBoardDto: CreateBoardDto | UpdateBoardDto, originTitle?: string) {
-    const board: Board = originTitle
-      ? await this.boardRepository.findOne({
-          where: {
-            title: originTitle,
-          },
-        })
-      : new Board();
-
-    Object.assign(board, upsertBoardDto);
-    return await this.boardRepository.save(board);
+  async create(craeteBoardDto: CreateBoardDto) {
+    const board: Board = this.boardRepository.create({ ...craeteBoardDto });
+    await this.boardRepository.save(board);
   }
 
-  findAll() {
-    return `This action returns all board`;
+  async update(originTitle: string, updateBoardDto: UpdateBoardDto) {
+    const boardExists: Board = await this.boardRepository.findOneBy({ title: originTitle });
+    if (!boardExists) throw new BadRequestException(`board "${originTitle}" not found`);
+
+    Object.assign(boardExists, updateBoardDto);
+    await this.boardRepository.save(boardExists);
   }
 
-  async findOne(title: string) {
-    return await this.boardRepository.findOneOrFail({
-      where: {
-        title,
-      },
+  async fetchPagenatedBoards(page: number, take: number): Promise<Board[]> {
+    return await this.boardRepository.find({
+      skip: (page - 1) * take,
+      take,
     });
   }
 
-  async remove(title: string) {
-    const board = await this.boardRepository.findOneOrFail({
-      where: {
-        title,
-      },
-    });
-    await this.boardRepository.remove(board);
+  async findOne(title: string): Promise<Board> {
+    const result: Board = await this.boardRepository.findOneBy({ title });
+    if (!result) throw new BadRequestException(`board "${title}" not found`);
+    return result;
+  }
+
+  async remove(title: string): Promise<void> {
+    const board = await this.boardRepository.findOneBy({ title });
+    if (!board) throw new BadRequestException(`board "${title}" not found`);
+    await this.boardRepository.softRemove(board);
   }
 }

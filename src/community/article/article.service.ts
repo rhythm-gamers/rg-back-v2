@@ -3,7 +3,7 @@ import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Article } from './entities/article.entity';
-import { Repository } from 'typeorm';
+import { EntityNotFoundError, Repository } from 'typeorm';
 import { BoardService } from '../board/board.service';
 import { Board } from '../board/entities/board.entity';
 import { User } from 'src/user/entity/user.entity';
@@ -25,19 +25,17 @@ export class ArticleService {
 
   async create(user: User, createArticleDto: CreateArticleDto) {
     if (user.role !== UserRole.ADMIN && createArticleDto.isNotice === true)
-      throw new UnauthorizedException('공지는 ADMIN만 등록 가능합니다');
+      throw new UnauthorizedException('Notice Article can be uploaded by ADMIN');
 
-    const boardname = createArticleDto.boardname;
-    delete createArticleDto.boardname;
+    const { boardname, ...dto } = createArticleDto;
     const board: Board = await this.boardService.findOne(boardname);
-    const article: Article = new Article();
-    Object.assign(article, {
-      ...createArticleDto,
-      board: board,
-      user: user,
+    const article: Article = this.articleRepository.create({
+      ...dto,
+      board,
+      user,
     });
 
-    return await this.articleRepository.save(article);
+    await this.articleRepository.save(article);
   }
 
   getArticleQueryBuilder() {
@@ -91,21 +89,25 @@ export class ArticleService {
     return new ArticleDetailDto(article);
   }
 
-  async findOne(id: number): Promise<Article> {
-    return await this.articleRepository.findOneOrFail({
-      where: { id },
+  async findOne(articleId: number): Promise<Article> {
+    const result: Article = await this.articleRepository.findOne({
+      where: { id: articleId },
+      relations: ['user'],
     });
+    if (!result) throw new BadRequestException(`id $${articleId} article not found`);
+    return result;
   }
 
-  async update(user: User, id: number, updateArticleDto: UpdateArticleDto) {
-    const article: Article = await this.articleRepository.findOneOrFail({
+  async update(user: User, articleId: number, updateArticleDto: UpdateArticleDto) {
+    const article: Article = await this.articleRepository.findOne({
       where: {
-        id,
+        id: articleId,
         user,
       },
       relations: ['user'],
     });
 
+    if (!article) throw new BadRequestException(`id $${articleId} article not found`);
     if (article.user.id !== user.id) throw new BadRequestException('작성자가 아닙니다');
 
     Object.assign(article, updateArticleDto);
@@ -116,14 +118,13 @@ export class ArticleService {
     });
   }
 
-  async remove(user: User, id: number) {
-    const article: Article = await this.articleRepository.findOneOrFail({
-      where: {
-        id,
-      },
+  async remove(user: User, articleId: number) {
+    const article: Article = await this.articleRepository.findOne({
+      where: { id: articleId },
       relations: ['user'],
     });
 
+    if (!article) throw new EntityNotFoundError(Article, `id $${articleId} article not found`);
     if (article.user.id !== user.id && user.role !== UserRole.ADMIN) throw new BadRequestException('작성자가 아닙니다');
 
     await this.articleRepository.manager.transaction(async manager => {
@@ -132,33 +133,26 @@ export class ArticleService {
   }
 
   async toggleLike(user: User, articleId: number): Promise<ToggleResult> {
-    const article = await this.articleRepository.findOneOrFail({
-      where: {
-        id: articleId,
-      },
-    });
+    const article = await this.articleRepository.findOneBy({ id: articleId });
+    if (!article) throw new EntityNotFoundError(Article, `id $${articleId} article not found`);
 
-    const existingLike = await this.articleLikeRepository.findOne({
-      where: {
+    return await this.articleRepository.manager.transaction(async manager => {
+      const existingLike = await manager.findOneBy(ArticleLike, {
         user: { id: user.id },
         article: { id: articleId },
-      },
+      });
+
+      if (existingLike) {
+        await manager.remove(existingLike);
+        return ToggleResult.TOGGLE_DELETE;
+      } else {
+        const articleLike = manager.create(ArticleLike, {
+          user,
+          article,
+        });
+        await manager.save(articleLike);
+        return ToggleResult.TOGGLE_APPEND;
+      }
     });
-
-    if (existingLike) {
-      await this.articleRepository.manager.transaction(async manager => {
-        await manager.remove(ArticleLike, existingLike);
-      });
-      return ToggleResult.TOGGLE_DELETE;
-    } else {
-      const articleLike: ArticleLike = new ArticleLike();
-      articleLike.user = user;
-      articleLike.article = article;
-
-      await this.articleRepository.manager.transaction(async manager => {
-        await manager.save(ArticleLike, articleLike);
-      });
-      return ToggleResult.TOGGLE_APPEND;
-    }
   }
 }

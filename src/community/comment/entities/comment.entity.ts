@@ -1,15 +1,15 @@
 import { CommunityBaseEntity } from 'src/common/entity/community-base.entity';
 import { Article } from 'src/community/article/entities/article.entity';
 import { User } from 'src/user/entity/user.entity';
-import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, OneToOne } from 'typeorm';
 import { CommentLike } from './comment-like.entity';
 
 @Entity()
+@Index('IDX_PARENT_SEQUENCE', ['parentId', 'sequence'])
 export class Comment extends CommunityBaseEntity {
   @Column({ length: 1000 })
   content: string;
 
-  @Index()
   @Column({ default: -1 })
   parentId: number;
 
@@ -23,20 +23,17 @@ export class Comment extends CommunityBaseEntity {
   @Column({ default: 1 })
   sequence: number;
 
-  @Column({ default: 0 })
-  childCount: number;
+  @OneToOne(() => User)
+  replyTo: User;
 
-  @Column({ default: false })
-  isDeleted: boolean;
-
-  @ManyToOne(() => Article, article => article.comments, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Article, article => article.comments, { onDelete: 'NO ACTION' })
   @JoinColumn()
   article: Article;
 
-  @ManyToOne(() => User, user => user.comments, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, user => user.comments, { onDelete: 'NO ACTION' })
   @JoinColumn()
   user: User;
 
-  @OneToMany(() => CommentLike, like => like.comment, { cascade: ['remove'] })
+  @OneToMany(() => CommentLike, like => like.comment, { cascade: ['soft-remove'] })
   likes: CommentLike[];
 }
