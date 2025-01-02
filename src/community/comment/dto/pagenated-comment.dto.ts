@@ -17,7 +17,7 @@ export class PagenatedCommentsDto {
     this.updatedAt = comment.updatedAt;
     this.content = comment.content;
     this.depth = comment.depth;
-    this.deleted = comment.isDeleted;
+    this.deleted = comment.deletedAt ? true : false;
     this.user = new UserSimpleInfoDto(comment.user?.nickname ?? null, comment.user?.profileImage ?? null);
   }
 }
