@@ -10,6 +10,6 @@ export class Board extends CommunityBaseEntity {
   @Column({ length: 100 })
   description: string;
 
-  @OneToMany(() => Article, article => article.board, { cascade: ['remove'] })
+  @OneToMany(() => Article, article => article.board, { cascade: ['soft-remove'] })
   articles: Article[];
 }

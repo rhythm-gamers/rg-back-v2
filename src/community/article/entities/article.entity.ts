@@ -16,17 +16,17 @@ export class Article extends CommunityBaseEntity {
   @Column({ default: false })
   isNotice: boolean;
 
-  @ManyToOne(() => Board, board => board.articles, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Board, board => board.articles, { onUpdate: 'CASCADE' })
   @JoinColumn()
   board: Board;
 
-  @OneToMany(() => Comment, comment => comment.article, { cascade: ['remove'] })
+  @OneToMany(() => Comment, comment => comment.article, { cascade: ['soft-remove'] })
   comments: Comment[];
 
-  @ManyToOne(() => User, user => user.articles, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, user => user.articles, { onDelete: 'NO ACTION' })
   @JoinColumn()
   user: User;
 
-  @OneToMany(() => ArticleLike, like => like.article, { cascade: ['remove'] })
+  @OneToMany(() => ArticleLike, like => like.article, { cascade: ['soft-remove'] })
   likes: ArticleLike[];
 }

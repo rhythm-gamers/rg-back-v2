@@ -46,13 +46,13 @@ export class User extends CommonEntity {
   @OneToMany(() => PatternPracticeProgress, progress => progress.user, { cascade: true })
   patternPracticeProgresses: PatternPracticeProgress[];
 
-  @OneToMany(() => Article, article => article.user, { cascade: ['remove', 'soft-remove'] })
+  @OneToMany(() => Article, article => article.user)
   articles: Article[];
 
   @OneToMany(() => ArticleLike, like => like.user, { cascade: ['remove', 'soft-remove'] })
   articleLikes: ArticleLike[];
 
-  @OneToMany(() => Comment, comment => comment.user, { cascade: ['remove', 'soft-remove'] })
+  @OneToMany(() => Comment, comment => comment.user)
   comments: Comment[];
 
   @OneToMany(() => CommentLike, like => like.user, { cascade: ['remove', 'soft-remove'] })
