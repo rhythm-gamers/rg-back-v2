@@ -4,7 +4,6 @@ import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
 import { Response } from 'express';
 import { User } from 'src/user/entity/user.entity';
-import { Article } from './entities/article.entity';
 import { ArticleDetailDto } from './dto/article-detail.dto';
 import { SimpleArticleDetailDto } from './dto/simple-article-detail.dto';
 import { SkipAuth } from 'src/common/metadata/skip-auth.metadata';
@@ -18,8 +17,8 @@ export class ArticleController {
   @Post()
   async create(@Req() req, @Res() res: Response, @Body() createArticleDto: CreateArticleDto) {
     const user: User = getUserFromRequest(req);
-    const result: Article = await this.articleService.create(user, createArticleDto);
-    res.send(result);
+    await this.articleService.create(user, createArticleDto);
+    res.send();
   }
 
   @SkipAuth()
