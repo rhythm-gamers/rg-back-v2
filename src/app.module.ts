@@ -21,6 +21,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { mailerConfig } from './config/mailer.config';
 import { RabbitmqModule } from './rabbitmq/rabbitmq.module';
+import { WinstonModule } from 'nest-winston';
+import { winstonConfig } from './config/winston.config';
 
 @Module({
   imports: [
@@ -42,6 +44,10 @@ import { RabbitmqModule } from './rabbitmq/rabbitmq.module';
     MailerModule.forRootAsync({
       inject: [ConfigService],
       useFactory: mailerConfig,
+    }),
+    WinstonModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: winstonConfig,
     }),
     UserModule,
     AuthModule,

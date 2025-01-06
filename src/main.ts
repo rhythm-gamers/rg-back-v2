@@ -7,9 +7,13 @@ import { TokenService } from './common/utils/token.service';
 import { BCryptService } from './common/utils/bcrypt.service';
 import { AuthorizationGuard } from './auth/guards/authorization.guard';
 import { ValidationPipe } from '@nestjs/common';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
+
   app.use(cookieParser());
 
   app.useGlobalGuards(
@@ -30,8 +34,9 @@ async function bootstrap() {
   app.enableCors({
     methods: 'POST,GET,PUT,PATCH,DELETE',
     credentials: true,
-    origin: '*',
+    origin: 'null',
   });
+
   await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();
