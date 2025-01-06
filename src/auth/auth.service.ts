@@ -108,6 +108,6 @@ export class AuthService {
   }
 
   removeCookie(res: Response, key: string) {
-    res.clearCookie(key);
+    res.clearCookie(key, { ...cookieOptions });
   }
 }

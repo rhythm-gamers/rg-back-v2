@@ -52,7 +52,7 @@ export class AuthController {
       const [accessToken, refreshToken] = await this.authService.signin(body);
 
       this.authService.addCookie(res, TokenType.ACCESS_TOKEN, accessToken, CommonType.TTL_HOUR);
-      res.status(HttpStatus.OK).send({ refreshToken: refreshToken });
+      res.status(HttpStatus.OK).send({ refreshToken });
     } catch (err) {
       res.status(HttpStatus.BAD_REQUEST).send(err.message);
     }
@@ -84,7 +84,7 @@ export class AuthController {
     const [accessToken, refreshToken] = await this.authService.renewToken(user);
 
     this.authService.addCookie(res, TokenType.ACCESS_TOKEN, accessToken, CommonType.TTL_HOUR);
-    res.send(refreshToken);
+    res.status(HttpStatus.OK).send({ refreshToken });
   }
 
   @Delete('/withdraw')
